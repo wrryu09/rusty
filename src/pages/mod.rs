@@ -1,3 +1,3 @@
-mod mainpage;
+mod main;
 
-pub use mainpage::MainPage;
+pub use main::MainPage;

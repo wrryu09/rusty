@@ -1,12 +1,8 @@
-mod pages;
-
-use pages::MainPage;
-use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 
-struct RustProj;
+pub struct MainPage;
 
-impl Component for RustProj {
+impl Component for MainPage {
     type Message = ();
     type Properties = ();
 
@@ -21,15 +17,8 @@ impl Component for RustProj {
     fn changed(&mut self, _ctx: &Context<Self>, _props: &Self::Properties) -> bool {
         true
     }
-    
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        html! { <span>{"Hi......"}</span> }
+        html! { <span>{"Main page"}</span> }
     }
-}
-
-#[wasm_bindgen(start)]
-pub fn run_app() {
-    yew::Renderer::<RustProj>::new().render();
-    yew::Renderer::<MainPage>::new().render();
 }

@@ -1,0 +1,17 @@
+[
+    {
+        "id": 0,
+        "name": "first",
+        "desc": "first object"
+    },
+    {
+        "id": 1,
+        "name": "scnd",
+        "desc": "second object"
+    },
+    {
+        "id": 2,
+        "name": "third",
+        "desc": "3rd object"
+    }
+]

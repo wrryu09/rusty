@@ -1,5 +1,6 @@
 mod pages;
-
+mod api;
+mod types;
 use pages::MainPage;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;

@@ -1,21 +1,13 @@
 use yew::prelude::*;
-
-#[derive(Clone)]
-
-struct TestObject{
-    id: i32,
-    name: String,
-    desc: String
-}
-
-struct ObjectList{
-    object: TestObject,
-    quantity: i32
-}
+use crate::{api::get_items, types::{ObjectList, TestObject}};
+use anyhow:: Error;
+use wasm_bindgen_futures::spawn_local;
 
 struct State{
     items: Vec<TestObject>,
-    item_list: Vec<ObjectList>
+    item_list: Vec<ObjectList>,
+    get_items_error: Option<Error>,
+    get_items_loaded: bool,
 }
 
 pub struct MainPage{
@@ -23,38 +15,63 @@ pub struct MainPage{
 }
 
 pub enum Msg{
-    AddToList(i32)
+    AddToList(i32),
+    GetItems,
+    GetItemsSuccess(Vec<TestObject>),
+    GetItemsError(Error)
 }
 
 impl Component for MainPage {
     type Message = Msg;
     type Properties = ();
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        let items: Vec<TestObject> = vec![
-            TestObject{
-                id: 0,
-                name: "firstObj".to_string(),
-                desc: "first obj in mainpage".to_string(),
-            },
-            TestObject{
-                id: 1,
-                name: "scndObj".to_string(),
-                desc: "second".to_string(),
-            },
-        ];
-        let item_list = vec![];
+    fn create(ctx: &Context<Self>) -> Self {
+        let items: Vec<TestObject> = vec![];
+        let item_list: Vec<ObjectList> = vec![];
+
+        ctx.link().send_message(Msg::GetItems);
 
         Self{
             state: State { 
                 items,
                 item_list, 
-            },
+                get_items_error:None,
+                get_items_loaded: false
+            }
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, message: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, message: Self::Message) -> bool {
         match message {
+            Msg::GetItems=>{
+                self.state.get_items_loaded = false;
+                let callback = ctx.link().callback(|result: Result<Vec<TestObject>, gloo_net::Error>| {
+                    match result {
+                        Ok(items) => Msg::GetItemsSuccess(items),
+                        Err(err) => Msg::GetItemsError(err.into()),
+                    }
+                });
+
+                spawn_local(async move {
+                    let res = get_items().await;
+                    callback.emit(res);
+                });
+
+                true
+            }
+
+            Msg::GetItemsSuccess(items)=>{
+                self.state.items = items;
+                self.state.get_items_loaded = true;
+                true
+            }
+
+            Msg::GetItemsError(err)=>{
+                self.state.get_items_error = Some(err);
+                self.state.get_items_loaded = true;
+                true
+            }
+
             Msg::AddToList(obj_id)=>{
                 let obj = self.state.items.iter().find(|ob: &&TestObject| ob.id == obj_id).unwrap();
 
@@ -96,11 +113,22 @@ impl Component for MainPage {
         }).collect();
 
         let list_quantity = self.state.item_list.iter().fold(0, |acc, objli: &ObjectList| acc+objli.quantity);
-        html! { 
-        <div>
-            <span>{format!("item amount: {:.2}", list_quantity)}</span>
-            <span>{items}</span>
-        </div>
+        
+        if !self.state.get_items_loaded{
+            html! {
+                <div>{"Loading ..."}</div>
+            }
+        }else if let Some(_) = self.state.get_items_error{
+            html! {
+                <div>{"Err"}</div>
+            }
+        }else{
+            html! { 
+                <div>
+                    <span>{format!("item amount: {:.2}", list_quantity)}</span>
+                    <span>{items}</span>
+                </div>
+                }
         }
     }
 }
